@@ -76,8 +76,8 @@ def check_proc(process, dry=True):
 def bootstrap_keys(password=None):
     if env.key_filename:
         for key in env.key_filename:
-            push_key(key_file=key+'.pub', user='root', password=password, force=True)
-            push_key(key_file=key+'.pub', user='root', password=password, force=True)
+            if os.path.isfile(os.path.expanduser(key)):
+                push_key(key_file=key+'.pub', user='root', password=password, force=True)
 
 
 
@@ -86,11 +86,13 @@ def push_key(key_file='~/.ssh/id_dsa.pub', user=None, password=None, force=False
     """ Append passed ssh pubkey to destination host (if not exist already)
     """
     _skipExcluded()
+
     if (skipOffline and not _online(env.host)):
         return
 
     _credentials(user,password)
 
+    print('Uploading key: ',key_file)
     key_text = _read_key_file(key_file).strip()
     run('test -d ~/.ssh || mkdir -p ~/.ssh/')
     append('~/.ssh/authorized_keys', key_text)

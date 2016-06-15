@@ -11,10 +11,12 @@ environments = {
             os.getenv('HOME')+'/.ssh/id_dsa',
             os.getenv('HOME')+'/.ssh/id_ed25519'
         ],
+        'ssh_config_path' : '',
         'hosts': [],
         'roledefs': {
-            'foo': [''],
-            'baz': [''],
+            'master': [],
+            'control': [],
+            'kvm': [],
         },
     },
     #'dev': { },
