@@ -7,13 +7,14 @@ Clone as "fabfile" to your project.
 ## Documentation
 
 Use native fabric comands
-
+```
   fab --list
   fab --list-format=nested --list
-
+```
+```
   # some modules may print some tips
   fab salt.help
-
+```
 
 For more info have a look on documentation:
 - http://wiki.fabfile.org/Recipes
