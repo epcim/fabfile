@@ -47,6 +47,10 @@ from fabric.api import env
     # #if _online(env.host) is True:
     # run(c)
 
+@task
+def cmd(cmd):
+    run("%s" % (cmd))
+
 
 ## NETWORKING
 @task

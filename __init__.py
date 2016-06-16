@@ -14,7 +14,7 @@ import sys
 import os
 import os.path
 from string import Template
-from fabric.api import env
+from fabric.api import env, task, execute, run, runs_once
 
 # Used
 from fabric.api import task
@@ -44,43 +44,7 @@ import salt
 ##    fab --list-format=nested --list
 
 
-env.settings = {}
-
-
-@task(alias='e')
-def environment(name):
-    """ Load environment configuration
-    """
-
-    cli = env.copy()
-    env.update(fabcfg.environments[name])
-
-    # IF ... SPECIFIED ON CLI THEN OVERRIDE
-    # gateway
-    if cli.has_key('gateway'):
-        env.gateway = cli['gateway']
-    # hosts
-    if len(cli['hosts']) > 0:
-        env.hosts = cli['hosts']
-    else:
-        for l in env.roledefs.values():
-            env.hosts.extend(l)
-
-    if env.ssh_config_path and os.path.isfile(os.path.expanduser(env.ssh_config_path)):
-        env.use_ssh_config = True
-        #_annotate_hosts_with_ssh_config_info(os.path.expanduser(env.ssh_config_path))
-
-
-
-# Main
-if os.getenv('ENVIRONMENT'):
-  environment(os.getenv('ENVIRONMENT'))
-else:
-  k = fabcfg.environments.keys()
-  k.sort()
-  if k:
-    environment(k[0])
-
+#env.settings = {}
 
 def _annotate_hosts_with_ssh_config_info(path):
     from os.path import expanduser
@@ -88,8 +52,8 @@ def _annotate_hosts_with_ssh_config_info(path):
 
     def hostinfo(host, config):
         hive = config.lookup(host)
-        if 'hostname' in hive:
-            host = hive['hostname']
+        #if 'hostname' in hive:
+        #    host = hive['hostname']
         if 'user' in hive:
             host = '%s@%s' % (hive['user'], host)
         if 'port' in hive:
@@ -110,6 +74,46 @@ def _annotate_hosts_with_ssh_config_info(path):
 
         for role, rolehosts in env.roledefs.items():
             env.roledefs[role] = [hostinfo(host, config) for host in rolehosts]
+
+
+@runs_once
+@task(alias='e')
+def setenv(name):
+    """ Load environment configuration
+    """
+
+    cli = env.copy()
+    env.update(fabcfg.environments[name])
+
+    #print cli
+
+    # IF ... SPECIFIED ON CLI THEN OVERRIDE
+    # gateway
+    if cli.has_key('gateway') and cli['gateway'] != None:
+        env.gateway = cli['gateway']
+    # hosts
+    if len(cli['hosts']) > 0:
+        env.hosts = cli['hosts']
+        #TODO, allow glob* pattern on host name
+    else:
+      for l in env.roledefs.values():
+        env.hosts.extend(l)
+
+    if env.ssh_config_path and os.path.isfile(os.path.expanduser(env.ssh_config_path)):
+        env.use_ssh_config = True
+        _annotate_hosts_with_ssh_config_info(os.path.expanduser(env.ssh_config_path))
+
+
+
+# Main
+if os.getenv('FABENV'):
+  setenv(os.getenv('FABENV'))
+else:
+  #print fabcfg.environments
+  k = fabcfg.environments.keys()[:]
+  k.sort()
+  if k:
+    setenv(k[0])
 
 
 
