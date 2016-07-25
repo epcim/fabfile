@@ -5,7 +5,7 @@ Intended to provide scripted interface to take actions on salt master.
 
 """
 AUTHOR = "epcim@apealive.net"
-URL = "http://github.com/epcim/fabric-toolbox"
+URL = "http://github.com/epcim/fabfile"
 
 #import sys
 #import os
@@ -45,6 +45,13 @@ from fabric.api import *
 # fab salt.help
 
 
+## TODO
+# sshconf_hosts() { python -c "a=$1; k=a.keys()[0]; print('Host ' + k.split('.')[0] + '\n\tUser root\n\tHostname ' + filter(lambda s: s[:3]!='127' , sorted(a[k]['ipv4'],reverse=True))[0])";}
+# sshconf_hosts() { python -c "d={};a=$1; k=a.keys()[0];d[k.split('.')[0]]=filter(lambda s:s[:3]!='127',sorted(a[k]['ipv4'],reverse=True))[0];     print('Host %s\n\tUser root\n\tHostname %s' % d.items()[0])"}
+# sshconf_vipky() { python -c "d={};a=$1; k=a.keys()[0];d[k.split('.')[0].strip('012345678')+'_vip']=filter(lambda s:s[-1:]=='0',a[k]['ipv4'])[0]; print('Host %s\n\tUser root\n\tHostname %s' % d.items()[0])"}
+# while read -r line; do sshconf_hosts "$line" ;done < <(salt \* grains.item ipv4 --out=pprint) 2> /dev/null
+# while read -r line; do sshconf_vipky "$line" ;done < <(salt \* grains.item ipv4 --out=pprint) 2> /dev/null
+
 
 #env.hosts = ['cfg01']
 
@@ -58,6 +65,16 @@ def help():
     function control()    { X=$@; fab salt.cmd:hosts='ctl01',"source /root/keystonerc;${X//\*/\\*}" }
     function compute()    { X=$@; fab salt.cmd:hosts='cmp01',"source /root/keystonerc;${X//\*/\\*}" }
     function smaster()    { X=$@; fab salt.cmd:role='master',"${X//\*/\\*}" }
+
+
+    alias ctl\#=control
+    alias controller\#=control
+    alias cmp\#=compute
+    alias compute\#=compute
+    alias cfg\#=smaster
+    alias saltmaster\#=smaster
+
+
     alias salt="fabsalt salt";
     alias salt-key="fabsalt key";
     alias salt-call="fabsalt call";
@@ -72,14 +89,27 @@ def help():
   """
 
 @task
-def cmd(cmd):
-    run("%s" % (cmd))
+def cmd(cmd,sudo_user='root',use_sudo=True):
+    with settings(sudo_user=sudo_user,use_sudo=use_sudo):
+        sudo("%s" % (cmd))
 
 @task
 @roles('master')
 def salt(args,cmd='salt'):
     if args:
-      run("%s %s" % (cmd,args))
+      # merge attribute after salt module name, module name identified as containing '.'
+      remap=[]
+      for i,e in enumerate(args.split()+['','']):
+        print 'DEBUG', i,e
+        if '.' not in e :
+            print t[i]
+            remap.append(t[i])
+        else:
+            remap.extend([t[i], " ".join(t[i+1:]).strip()])
+            break
+      # quote by ''
+      args_qouted=" ".join("'%s'" % i for i in remap if i <> '' )
+      run("%s %s" % (cmd, args_qouted))
       #execute(_run(args))
 
 @task

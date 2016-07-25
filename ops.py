@@ -213,7 +213,8 @@ def _credentials(user=None,password=None,key=None):
     if key:
         env.key_filename = key
 
-    #print 'user:' + env.user
-    #print 'pass:' + env.password
+
+    print 'user:' + env.user
+    print 'pass:' + env.password
 
 #vi: ts=2,sts=2:

@@ -52,12 +52,14 @@ def _annotate_hosts_with_ssh_config_info(path):
 
     def hostinfo(host, config):
         hive = config.lookup(host)
-        #if 'hostname' in hive:
-        #    host = hive['hostname']
+        # if 'hostname' in hive:
+           # host = hive['hostname']
         if 'user' in hive:
             host = '%s@%s' % (hive['user'], host)
         if 'port' in hive:
             host = '%s:%s' % (host, hive['port'])
+        #print 'hive',hive
+        #print 'host',host
         return host
 
     try:
@@ -67,13 +69,34 @@ def _annotate_hosts_with_ssh_config_info(path):
     else:
         config = SSHConfig()
         config.parse(config_file)
-        keys = [config.lookup(host).get('identityfile', None)
-            for host in env.hosts]
+
+        # add hosts from ssh config to env.host & sort + unique
+        env.hosts.extend([h for h in config.get_hostnames() if len(h) > 1])
+        env.hosts = sorted(set(env.hosts))
+
+        keys = [config.lookup(host).get('identityfile', None) for host in env.hosts]
+        # flatten
+        keys = [item for sublist in keys  if sublist is not None for item in sublist]
         env.key_filename = [expanduser(key) for key in keys if key is not None]
         env.hosts = [hostinfo(host, config) for host in env.hosts]
 
         for role, rolehosts in env.roledefs.items():
             env.roledefs[role] = [hostinfo(host, config) for host in rolehosts]
+
+
+def _populateRoledevsFromHosts():
+    """ Generate common roledefs from host names
+    """
+    # Feel free to customize
+
+    for h in env.hosts:
+        # pick hostname (strip user/port)
+        host=h.split('@')[-1:][0].split(':')[0]
+        # remove trailing numbers from hostname
+        short=host.strip("0123456789")
+        if not env.roledefs.has_key(short): env.roledefs[short] = []
+        if not h in env.roledefs[short]:
+            env.roledefs[short].append(h)
 
 
 @runs_once
@@ -102,6 +125,11 @@ def setenv(name):
     if env.ssh_config_path and os.path.isfile(os.path.expanduser(env.ssh_config_path)):
         env.use_ssh_config = True
         _annotate_hosts_with_ssh_config_info(os.path.expanduser(env.ssh_config_path))
+
+    _populateRoledevsFromHosts()
+
+    #print 'DEBUG', env.roledefs
+    #print 'DEBUG', env.hosts
 
 
 
