@@ -45,13 +45,18 @@ from fabric.api import *
 # fab salt.help
 
 
-## TODO
-# sshconf_hosts() { python -c "a=$1; k=a.keys()[0]; print('Host ' + k.split('.')[0] + '\n\tUser root\n\tHostname ' + filter(lambda s: s[:3]!='127' , sorted(a[k]['ipv4'],reverse=True))[0])";}
-# sshconf_hosts() { python -c "d={};a=$1; k=a.keys()[0];d[k.split('.')[0]]=filter(lambda s:s[:3]!='127',sorted(a[k]['ipv4'],reverse=True))[0];     print('Host %s\n\tUser root\n\tHostname %s' % d.items()[0])"}
-# sshconf_vipky() { python -c "d={};a=$1; k=a.keys()[0];d[k.split('.')[0].strip('012345678')+'_vip']=filter(lambda s:s[-1:]=='0',a[k]['ipv4'])[0]; print('Host %s\n\tUser root\n\tHostname %s' % d.items()[0])"}
-# while read -r line; do sshconf_hosts "$line" ;done < <(salt \* grains.item ipv4 --out=pprint) 2> /dev/null
-# while read -r line; do sshconf_vipky "$line" ;done < <(salt \* grains.item ipv4 --out=pprint) 2> /dev/null
-
+@task
+def ssh_config(grep='',grepv='=127\|=192'):
+    if len(grep) > 0:
+        grep="|egrep '%s'" % grep
+    payload= """
+    which jq || apt install -y jq
+    declare -A aa;
+    eval $(salt \* grains.item ipv4 --out=json --static| jq -r 'to_entries | map({name:.key, ip:.value["ipv4"]})|.[]| "aa["+.name+"]="+.ip[]' |sort|grep -v '%s' %s);
+    IFS=$'\n' sorted_keys=($(sort <<<"${!aa[*]}"))
+    for i in "${sorted_keys[@]}"; do echo -e "Host: ${i}\n  Hostname ${aa[$i]}\n  #User \n  #IdentityFile\n  #Port 22\n\n";done
+    """ %(grepv, grep)
+    cmd(payload)
 
 #env.hosts = ['cfg01']
 
@@ -80,12 +85,12 @@ def help():
     alias salt-call="fabsalt call";
     alias salt-cmd="fabsalt cmd";
 
-    # direct execution
-    salt ctl\* grains.get ipv4
-    salt ctl\* state.highstate
-    fab -H ctl01 salt.call:"state.sls linux"
-    fab salt.call:"state.sls linux",roles=ctl
-    fab -g 10.10.15.3 --skip-bad-hosts setenv:vpc20 salt.cmd:"hostname -I"
+    ## direct execution
+    # salt ctl\* grains.get ipv4
+    # salt ctl\* state.highstate
+    # fab -H ctl01 salt.call:"state.sls linux"
+    # fab salt.call:"state.sls linux",roles=ctl
+    # fab -g 10.10.15.3 --skip-bad-hosts setenv:vpc20 salt.cmd:"hostname -I"
   """
 
 @task
