@@ -4,23 +4,23 @@ import os
 
 
 environments = {
-    'st': {
-        #'user': 'root',                                             # default user
+    'os1': {
+        'user': 'pmichalec',                                              # default user
         #'pass': 'password',                                         # default password
-        'gateway': 'root@10.171.20.50',                              # enable only if needed
-        'ssh_config_path' : 'fabfile/config/slovaktelekom_poc.conf', # hosts to be resolved from fabric
+        #'gateway': 'root@10.200.50.10',                              # enable only if needed
+        'ssh_config_path' : 'fabfile/config/mall_prod.conf', # hosts to be resolved from fabric
         'key_filename' : [                                           # list user/access ssh keys
-            os.getenv('HOME')+'/.ssh/id_dsa',
-            os.getenv('HOME')+'/.ssh/id_ed25519'
+            './id_rsa_mall-prod',
+            os.getenv('HOME')+'/.ssh/id_ed25519',
         ],
         'hosts': [],
         'roledefs': {                                                # define custom groups = roledefs (optional)
-            'master': ['cfg01'],
+            #'master': ['cfg01'],
             'mass': ['mas01'],
-            'ctl': ['ctl01', 'ctl02', 'ctl03'],
-            'cmp': [#'cmp01', 'cmp02',
-                    'cmp03','cmp04','cmp05'],
-            'kvm': ['kvm01', 'kvm02', 'kvm03'],
+            #'ctl': ['ctl01', 'ctl02', 'ctl03'],
+            #'cmp': [#'cmp01', 'cmp02',
+            #        'cmp03','cmp04','cmp05'],
+            #'kvm': ['kvm01', 'kvm02', 'kvm03'],
             # 'web': ['web01'],
             # 'mon': ['mon01'],
             # 'mtr': ['mtr01'],
