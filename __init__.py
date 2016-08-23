@@ -92,8 +92,10 @@ def _populateRoledevsFromHosts():
     for h in env.hosts:
         # pick hostname (strip user/port)
         host=h.split('@')[-1:][0].split(':')[0]
-        # remove trailing numbers from hostname
-        short=host.strip("0123456789")
+        # remove
+        # - domain
+        # - trailing numbers from hostname
+        short=host.split('.')[0].strip("0123456789")
         if not env.roledefs.has_key(short): env.roledefs[short] = []
         if not h in env.roledefs[short]:
             env.roledefs[short].append(h)
@@ -128,8 +130,8 @@ def setenv(name):
 
     _populateRoledevsFromHosts()
 
-    #print 'DEBUG', env.roledefs
-    #print 'DEBUG', env.hosts
+    #print 'DEBUG roledefs', env.roledefs
+    #print 'DEBUG hosts', env.hosts
 
 
 

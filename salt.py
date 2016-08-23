@@ -54,7 +54,7 @@ def ssh_config(grep='',grepv='=127\|=192'):
     declare -A aa;
     eval $(salt \* grains.item ipv4 --out=json --static| jq -r 'to_entries | map({name:.key, ip:.value["ipv4"]})|.[]| "aa["+.name+"]="+.ip[]' |sort|grep -v '%s' %s);
     IFS=$'\n' sorted_keys=($(sort <<<"${!aa[*]}"))
-    for i in "${sorted_keys[@]}"; do echo -e "Host: ${i}\n  Hostname ${aa[$i]}\n  #User \n  #IdentityFile\n  #Port 22\n\n";done
+    for i in "${sorted_keys[@]}"; do echo -e "Host ${i}\n  Hostname ${aa[$i]}\n  #User\n  #IdentityFile\n  #Port 22\n\n";done
     """ %(grepv, grep)
     cmd(payload)
 
@@ -65,25 +65,55 @@ def ssh_config(grep='',grepv='=127\|=192'):
 def help():
   print """
 
+    # note:
+    # there is and <fabfile repo>/.fabrc.openstack.example
+
+    export DOMAIN=os.local
+
+
+    function escape() {
+        E=$@
+        # stupid, but works in multiple shells
+        #E=${E//\*/\\\*}
+        E=${E//\,/\\\,}
+        E=${E//\'/\\\'}
+        E=${E//\:/\\\:}
+        E=${E//\~/\\\~}
+        E=${E//\;/\\\;}
+        E=${E//\&/\\\&}
+        E=${E//\|/\\\|}
+        echo ${E}
+    }
+
+
     # shell shortcuts
-    function fabsalt()    { action=$1;shift;X=$@; fab salt.$action:"${X//\*/\\*}" };
-    function control()    { X=$@; fab salt.cmd:hosts='ctl01',"source /root/keystonerc;${X//\*/\\*}" }
-    function compute()    { X=$@; fab salt.cmd:hosts='cmp01',"source /root/keystonerc;${X//\*/\\*}" }
-    function smaster()    { X=$@; fab salt.cmd:role='master',"${X//\*/\\*}" }
+    function fabsalt()    { action=$1;shift;X="$@"; fab salt.$action:"$(escape $X)" };
+    function control()    { H=$1;shift;X=$@; fab salt.cmd:"$H","source /root/keystonerc${OS_TENANT:+_$OS_TENANT}; $(escape $X)" }
+    function compute()    { X=$@; fab salt.cmd:hosts="cmp01${DOMAIN:+.$DOMAIN}","source /root/keystonerc;${X//\*/\*}" }
+    function fabhost()    { H=$1;shift;X=$@; fab salt.cmd:"$H","$(escape $X)" }
+    function smaster()    { X=$@; fab salt.cmd:role='master',"${X//\*/\*}" }
 
 
-    alias ctl\#=control
-    alias controller\#=control
-    alias cmp\#=compute
-    alias compute\#=compute
-    alias cfg\#=smaster
-    alias saltmaster\#=smaster
+    # example openstack topology shortcuts
+    alias smasters\#="fabhost roles=cfg"
+    alias contrails\#="fabhost roles=ntw"
+    alias databases\#="fabhost roles=dbs"
+    alias controllers\#="control roles=ctl"
+    alias ctl\#="control hosts=ctl01${DOMAIN:+.$DOMAIN}"
+    alias kvm\#="fabhost hosts=kvm01${DOMAIN:+.$DOMAIN}"
+    alias cfg\#="fabhost hosts=cfg01${DOMAIN:+.$DOMAIN}"
+    alias cmp\#="fabhost hosts=cmp01${DOMAIN:+.$DOMAIN}"
+    alias dbs\#="fabhost hosts=dbs01${DOMAIN:+.$DOMAIN}"
+    alias mtr\#="fabhost hosts=mtr01${DOMAIN:+.$DOMAIN}"
+    alias ntw\#="fabhost hosts=ntw01${DOMAIN:+.$DOMAIN}"
+    alias anl\#="fabhost hosts=anl01${DOMAIN:+.$DOMAIN}"
 
+    # optionally
+    #alias salt="fabsalt salt";
+    #alias salt-key="fabsalt key";
+    #alias salt-call="fabsalt call";
+    #alias salt-cmd="fabsalt cmd";
 
-    alias salt="fabsalt salt";
-    alias salt-key="fabsalt key";
-    alias salt-call="fabsalt call";
-    alias salt-cmd="fabsalt cmd";
 
     ## direct execution
     # salt ctl\* grains.get ipv4
@@ -91,6 +121,10 @@ def help():
     # fab -H ctl01 salt.call:"state.sls linux"
     # fab salt.call:"state.sls linux",roles=ctl
     # fab -g 10.10.15.3 --skip-bad-hosts setenv:vpc20 salt.cmd:"hostname -I"
+    #
+    ## using a wrapper
+    # cfg# salt-call state.sls linux,openssh
+    # cfg# salt kvm\* state.sls linux,openssh,libvirt
   """
 
 @task
