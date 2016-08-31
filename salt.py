@@ -46,6 +46,7 @@ from fabric.api import *
 
 
 @task
+@roles('master')
 def ssh_config(grep='',grepv='=127\|=192'):
     if len(grep) > 0:
         grep="|egrep '%s'" % grep
