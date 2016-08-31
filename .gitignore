@@ -1,8 +1,8 @@
 #
 #
 # Avoid to commit fabcfg.py with custom changes
-./*fabcfg.py
-./*fabcfg.yml
+fabcfg.py
+fabcfg.yml
 
 #
 # Byte-compiled / optimized / DLL files

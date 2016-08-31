@@ -46,6 +46,7 @@ from fabric.api import *
 
 
 @task
+@roles('master')
 def ssh_config(grep='',grepv='=127\|=192'):
     if len(grep) > 0:
         grep="|egrep '%s'" % grep
@@ -65,11 +66,10 @@ def ssh_config(grep='',grepv='=127\|=192'):
 def help():
   print """
 
-    # note:
-    # there is and <fabfile repo>/.fabrc.openstack.example
+    # NOTE:
+    # there is and <fabfile repo>/.fabrc.openstack.example for inspiration
 
-    export DOMAIN=os.local
-
+    export DOMAIN=openstack.local
 
     function escape() {
         E=$@
@@ -84,7 +84,6 @@ def help():
         E=${E//\|/\\\|}
         echo ${E}
     }
-
 
     # shell shortcuts
     function fabsalt()    { action=$1;shift;X="$@"; fab salt.$action:"$(escape $X)" };
@@ -113,7 +112,6 @@ def help():
     #alias salt-key="fabsalt key";
     #alias salt-call="fabsalt call";
     #alias salt-cmd="fabsalt cmd";
-
 
     ## direct execution
     # salt ctl\* grains.get ipv4
