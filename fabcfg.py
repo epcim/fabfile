@@ -7,6 +7,7 @@ config='fabcfg.yml'
 # defaults
 environments = {
     'region1': {
+        forward_agent: True
         'user': 'ubuntu',                           # default user
         #'pass': 'password',                        # default password
         #'gateway': 'root@10.200.50.10',            # gw host, enable only if needed

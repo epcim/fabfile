@@ -49,13 +49,13 @@ from fabric.api import *
 @roles('master')
 def ssh_config(grep='',grepv='=127\|=192'):
     if len(grep) > 0:
-        grep="|egrep '%s'" % grep
+      grep="|egrep '%s'" % grep
     payload= """
     which jq || apt install -y jq
     declare -A aa;
     eval $(salt \* grains.item ipv4 --out=json --static| jq -r 'to_entries | map({name:.key, ip:.value["ipv4"]})|.[]| "aa["+.name+"]="+.ip[]' |sort|grep -v '%s' %s);
     IFS=$'\n' sorted_keys=($(sort <<<"${!aa[*]}"))
-    for i in "${sorted_keys[@]}"; do echo -e "Host ${i}\n  Hostname ${aa[$i]}\n  #User\n  #IdentityFile\n  #Port 22\n\n";done
+    for i in "${sorted_keys[@]}"; do echo -e "Host ${i}\n  Hostname ${aa[$i]}\n  #User\n  #IdentityFile\n  #Port 22\n StrictHostKeyChecking no\n\n";done
     """ %(grepv, grep)
     cmd(payload)
 
